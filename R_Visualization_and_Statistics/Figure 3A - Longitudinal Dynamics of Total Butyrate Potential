@@ -1,0 +1,84 @@
+# Title: Figure 3A - Longitudinal Dynamics of Total Butyrate Potential
+# Description: This script calculates the total butyrate-producing potential per sample 
+# and visualizes the longitudinal changes using a paired boxplot (FMT vs. Placebo).
+# Part of the strain-level metagenomics analysis pipeline.
+
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(readxl)
+library(stringr)
+
+# --- 1. Data Loading ---
+# Note: Ensure input files are in the working directory
+mag_abund <- read.csv("MASTER_MAGs_Abundance_Matrix.csv", row.names = 1, check.names = FALSE)
+bin_ko_counts <- read.csv("GLOBAL_BIN_KO_COUNT_MATRIX.csv", row.names = 1, check.names = FALSE)
+mapping <- read_excel("sample_mapping.xlsx") %>% 
+    rename(Sample_ID = 1, Group = GROUP) # Rename first column to Sample_ID for consistency
+
+# --- 2. Calculate Total Butyrate Potential per Sample ---
+# Target enzymes for the butyrate-producing pathway (K01034, K00929, K01035)
+target_kos <- c("K01034", "K00929", "K01035")
+all_colnames <- colnames(bin_ko_counts)
+matched_cols <- all_colnames[unlist(lapply(target_kos, function(x) grep(x, all_colnames)))]
+
+# Calculate Genomic Load for each MAG (sum of target enzyme copies)
+common_bins <- intersect(rownames(mag_abund), rownames(bin_ko_counts))
+bin_genomic_load <- rowSums(bin_ko_counts[common_bins, matched_cols, drop=FALSE])
+
+# Calculate Realized Power per Sample: SUM(Abundance * Genomic Load)
+total_sample_potential <- colSums(mag_abund[common_bins, ] * bin_genomic_load, na.rm = TRUE)
+
+# --- 3. Data Merging and Cleaning ---
+plot_df <- mapping %>%
+  # Filter samples present in the abundance matrix
+  filter(Sample_ID %in% names(total_sample_potential)) %>%
+  mutate(Potential = total_sample_potential[Sample_ID]) %>%
+  mutate(Timepoint = toupper(Timepoint)) %>%
+  # Consolidate Week 7 and Week 8 into a single "W08" peak phase
+  mutate(Timepoint = ifelse(Timepoint == "W07", "W08", Timepoint)) %>%
+  filter(Timepoint %in% c("W00", "W01", "W08", "W24")) %>%
+  # Extract Patient ID for longitudinal line linking
+  mutate(Patient_ID = str_extract(sample_alias, "R_P[0-9]+")) %>%
+  mutate(Group = ifelse(tolower(Group) == "fmt", "FMT", "Placebo")) %>%
+  mutate(Timepoint = factor(Timepoint, levels = c("W00", "W01", "W08", "W24")))
+
+# --- 4. Figure Generation (Figure 3A) ---
+p3a <- ggplot(plot_df, aes(x = Timepoint, y = Potential + 1, fill = Group)) +
+  # Background boxplot
+  geom_boxplot(alpha = 0.6, outlier.shape = NA, width = 0.6, color = "grey30") +
+  # Paired lines connecting individual patients across timepoints
+  geom_line(aes(group = Patient_ID, color = Group), alpha = 0.3, linewidth = 0.4) +
+  # Individual sample points
+  geom_point(aes(color = Group), size = 2.5, alpha = 0.7, 
+             position = position_jitter(width = 0.05)) +
+  # Split by Treatment Group
+  facet_wrap(~Group, scales = "fixed") +
+  # Log10 scale for Y-axis to visualize wide abundance range
+  scale_y_log10(breaks = c(1, 10, 100), labels = c("1", "10", "100")) +
+  # Professional color palette (Red for FMT, Blue for Placebo)
+  scale_fill_manual(values = c("FMT" = "#FB8072", "Placebo" = "#80B1D3")) +
+  scale_color_manual(values = c("FMT" = "#FB8072", "Placebo" = "#80B1D3")) +
+  theme_bw(base_size = 14) +
+  theme(
+    strip.background = element_rect(fill = "grey95"),
+    strip.text = element_text(face = "bold"),
+    panel.grid.minor = element_blank(),
+    plot.title = element_text(hjust = 0.5, face = "bold"),
+    legend.position = "right"
+  ) +
+  labs(
+    title = "Longitudinal Dynamics of Butyrate Potential",
+    y = "Butyrate Potential (log10 TPM + 1)",
+    x = "Timepoints (Weeks)"
+  ) +
+  # Add 'ns' annotation representing non-significant overall longitudinal change
+  annotate("segment", x = 1, xend = 4, y = 300, yend = 300, color = "black") +
+  annotate("text", x = 2.5, y = 380, label = "ns", size = 5)
+
+# --- 5. Save Final Figure ---
+# Saving as high-resolution PDF for publication
+ggsave("Figure_3A_Longitudinal_Boxplot.pdf", p3a, width = 9, height = 6, useDingbats = FALSE)
+
+# Preview plot
+print(p3a)
