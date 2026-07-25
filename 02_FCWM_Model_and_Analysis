@@ -1,0 +1,14 @@
+#!/bin/bash
+# Step 5.2: Metagenomic Assembly and Binning using MetaWRAP pipeline
+
+# 1. Metagenomic Binning with multiple algorithms
+# We used three different binning methods to ensure robustness
+metawrap binning \
+    -o ${OUTPUT_DIR}/${sample_id} \
+    -t 40 \
+    -a ${ASSEMBLY_DIR}/${sample_id}/final_assembly.fasta \
+    --metabat2 --maxbin2 --concoct \
+    ${clean_reads_r1} ${clean_reads_r2}
+
+# Note: After binning, we followed the high-quality MAGs criteria 
+# (Completeness > 90% and Contamination < 5%) as described in the Methods.
