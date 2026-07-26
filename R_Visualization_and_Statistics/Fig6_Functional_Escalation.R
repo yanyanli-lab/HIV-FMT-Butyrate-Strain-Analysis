@@ -52,3 +52,5 @@ ggsave("Figure_6_Functional_Escalation.pdf", p_escalation, width = 7, height = 5
 
 # Preview
 print(p_escalation)
+# Note: The raw iRep output PDF (e.g., Top15_MultiSample_Results.pdf) 
+# includes individual coverage plots like Figure 7B.
