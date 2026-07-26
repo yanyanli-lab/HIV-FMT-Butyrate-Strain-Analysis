@@ -47,7 +47,7 @@ Contains R scripts for statistical analysis and generating Figures 2 through 7:
 - Required packages: `ggplot2`, `dplyr`, `tidyr`, `readxl`, `pheatmap`, `stringr`.
 
 ## 📊 Data Availability
-The raw sequencing data analyzed in this study are available in the NCBI SRA repository (BioProject: [Insert PRJNA ID]). The 279 high-quality MAGs and processed data tables are archived in Zenodo (DOI: [Insert Zenodo DOI]).
+The raw sequencing data analyzed in this study are available in the NCBI SRA repository (BioProject: PRJNA1076935). The 279 high-quality MAGs and processed data tables are archived in Zenodo (DOI: 10.5281/zenodo.21595818).
 
 ## ✉️ Contact
-For questions regarding the code or the Functional Capacity Weighted Model (FCWM), please contact: **[Your Name/Email]** or **[Principal Investigator's Email]**.
+For questions regarding the code or the Functional Capacity Weighted Model (FCWM), please contact: [YanLi/1092728032@qq.com]** or [Fengjun Liu/Lfj1162126.com].
